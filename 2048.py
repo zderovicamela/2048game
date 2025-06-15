@@ -218,22 +218,48 @@ def generate_tiles():
 def show_end_screen(window, message):
     window.fill(BACKGROUND_COLOR)
     end_font = pygame.font.SysFont("comicsans", 100, bold=True)
+    button_font = pygame.font.SysFont("comicsans", 50, bold=True)
+
+    # Poruka Pobijedili ste! / Izgubili ste!
     text = end_font.render(message, True, FONT_COLOR)
     window.blit(
         text,
         (
             WIDTH // 2 - text.get_width() // 2,
-            HEIGHT // 2 - text.get_height() // 2,
+            HEIGHT // 2 - text.get_height() // 2 - 50,
         ),
     )
+
+    # Dugme "Igraj ponovo"
+    button_text = button_font.render("Igraj ponovo", True, (255, 255, 255))
+    button_width = 300
+    button_height = 80
+    button_x = WIDTH // 2 - button_width // 2
+    button_y = HEIGHT // 2 + 50
+    button_rect = pygame.Rect(button_x, button_y, button_width, button_height)
+
+    pygame.draw.rect(window, (119, 110, 101), button_rect, border_radius=10)
+    window.blit(
+        button_text,
+        (
+            button_x + (button_width - button_text.get_width()) // 2,
+            button_y + (button_height - button_text.get_height()) // 2,
+        ),
+    )
+
     pygame.display.update()
 
+    # Cekanje potvrde igraca
     waiting = True
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                waiting = False
+                pygame.quit()
+                exit()
 
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_rect.collidepoint(event.pos):
+                    waiting = False  
 
 def main(window):
     clock = pygame.time.Clock()
@@ -261,17 +287,16 @@ def main(window):
 
                 if result == "lost":
                     show_end_screen(window, "Izgubili ste!")
-                    run = False
-                    break
+                    main(window) 
+                    return
                 elif result == "won":
                     show_end_screen(window, "Pobijedili ste!")
-                    run = False
-                    break
+                    main(window) 
+                    return
 
         draw(window, tiles)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main(WINDOW)
