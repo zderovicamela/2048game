@@ -100,16 +100,13 @@ def draw(window, tiles):
 
 
 def get_random_pos(tiles):
-    row = None
-    col = None
     while True:
         row = random.randrange(0, ROWS)
         col = random.randrange(0, COLS)
-
         if f"{row}{col}" not in tiles:
             break
-
     return row, col
+
 
 def move_tiles(window, tiles, clock, direction):
     updated = True
@@ -122,9 +119,7 @@ def move_tiles(window, tiles, clock, direction):
         boundary_check = lambda tile: tile.col == 0
         get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col - 1}")
         merge_check = lambda tile, next_tile: tile.x > next_tile.x + MOVE_VEL
-        move_check = (
-            lambda tile, next_tile: tile.x > next_tile.x + RECT_WIDTH + MOVE_VEL
-        )
+        move_check = lambda tile, next_tile: tile.x > next_tile.x + RECT_WIDTH + MOVE_VEL
         ceil = True
     elif direction == "right":
         sort_func = lambda x: x.col
@@ -133,9 +128,7 @@ def move_tiles(window, tiles, clock, direction):
         boundary_check = lambda tile: tile.col == COLS - 1
         get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col + 1}")
         merge_check = lambda tile, next_tile: tile.x < next_tile.x - MOVE_VEL
-        move_check = (
-            lambda tile, next_tile: tile.x + RECT_WIDTH + MOVE_VEL < next_tile.x
-        )
+        move_check = lambda tile, next_tile: tile.x + RECT_WIDTH + MOVE_VEL < next_tile.x
         ceil = False
     elif direction == "up":
         sort_func = lambda x: x.row
@@ -144,9 +137,7 @@ def move_tiles(window, tiles, clock, direction):
         boundary_check = lambda tile: tile.row == 0
         get_next_tile = lambda tile: tiles.get(f"{tile.row - 1}{tile.col}")
         merge_check = lambda tile, next_tile: tile.y > next_tile.y + MOVE_VEL
-        move_check = (
-            lambda tile, next_tile: tile.y > next_tile.y + RECT_HEIGHT + MOVE_VEL
-        )
+        move_check = lambda tile, next_tile: tile.y > next_tile.y + RECT_HEIGHT + MOVE_VEL
         ceil = True
     elif direction == "down":
         sort_func = lambda x: x.row
@@ -155,9 +146,7 @@ def move_tiles(window, tiles, clock, direction):
         boundary_check = lambda tile: tile.row == ROWS - 1
         get_next_tile = lambda tile: tiles.get(f"{tile.row + 1}{tile.col}")
         merge_check = lambda tile, next_tile: tile.y < next_tile.y - MOVE_VEL
-        move_check = (
-            lambda tile, next_tile: tile.y + RECT_HEIGHT + MOVE_VEL < next_tile.y
-        )
+        move_check = lambda tile, next_tile: tile.y + RECT_HEIGHT + MOVE_VEL < next_tile.y
         ceil = False
 
     while updated:
@@ -193,6 +182,11 @@ def move_tiles(window, tiles, clock, direction):
 
         update_tiles(window, tiles, sorted_tiles)
 
+    # Dodano: Provjera za pobjedu
+    for tile in tiles.values():
+        if tile.value == 2048:
+            return "won"
+
     return end_move(tiles)
 
 
@@ -218,8 +212,28 @@ def generate_tiles():
     for _ in range(2):
         row, col = get_random_pos(tiles)
         tiles[f"{row}{col}"] = Tile(2, row, col)
-
     return tiles
+
+
+def show_end_screen(window, message):
+    window.fill(BACKGROUND_COLOR)
+    end_font = pygame.font.SysFont("comicsans", 100, bold=True)
+    text = end_font.render(message, True, FONT_COLOR)
+    window.blit(
+        text,
+        (
+            WIDTH // 2 - text.get_width() // 2,
+            HEIGHT // 2 - text.get_height() // 2,
+        ),
+    )
+    pygame.display.update()
+
+    waiting = True
+    while waiting:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                waiting = False
+
 
 def main(window):
     clock = pygame.time.Clock()
@@ -237,13 +251,22 @@ def main(window):
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    move_tiles(window, tiles, clock, "left")
+                    result = move_tiles(window, tiles, clock, "left")
                 if event.key == pygame.K_RIGHT:
-                    move_tiles(window, tiles, clock, "right")
+                    result = move_tiles(window, tiles, clock, "right")
                 if event.key == pygame.K_UP:
-                    move_tiles(window, tiles, clock, "up")
+                    result = move_tiles(window, tiles, clock, "up")
                 if event.key == pygame.K_DOWN:
-                    move_tiles(window, tiles, clock, "down")
+                    result = move_tiles(window, tiles, clock, "down")
+
+                if result == "lost":
+                    show_end_screen(window, "Izgubili ste!")
+                    run = False
+                    break
+                elif result == "won":
+                    show_end_screen(window, "Pobijedili ste!")
+                    run = False
+                    break
 
         draw(window, tiles)
 
